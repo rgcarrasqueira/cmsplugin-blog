@@ -1,15 +1,15 @@
 import datetime
-try: # pragma: no cover
+try:  # pragma: no cover
     from django.views.generic.dates import BaseDateDetailView, ArchiveIndexView, _date_lookup_for_field, _date_from_string
     from django.views.generic.detail import SingleObjectTemplateResponseMixin
-except ImportError: # pragma: no cover
+except ImportError:  # pragma: no cover
     from cbv.views.detail import SingleObjectTemplateResponseMixin
     from cbv.views.dates import BaseDateDetailView, ArchiveIndexView, _date_lookup_for_field, _date_from_string
 
 from django.http import Http404
 from django.shortcuts import redirect
 
-from cms.middleware.multilingual import has_lang_prefix
+from cmsplugin_blog.utils import has_lang_prefix
 from menus.utils import set_language_changer
 
 from simple_translation.middleware import filter_queryset_language
@@ -17,12 +17,16 @@ from simple_translation.utils import get_translation_filter, get_translation_fil
 from cmsplugin_blog.models import Entry
 from cmsplugin_blog.utils import is_multilingual
 
+
 class Redirect(Exception):
+
     def __init__(self, *args, **kwargs):
         self.args = args
         self.kwargs = kwargs
-        
+
+
 class DateDetailView(SingleObjectTemplateResponseMixin, BaseDateDetailView):
+
     # Override to fix django bug
     def get_object(self, queryset=None):
         """
@@ -53,14 +57,16 @@ class DateDetailView(SingleObjectTemplateResponseMixin, BaseDateDetailView):
         queryset = queryset.filter(**lookup)
 
         return super(BaseDateDetailView, self).get_object(queryset=queryset)
-    
+
+
 class EntryDateDetailView(DateDetailView):
+
     slug_field = get_translation_filter(Entry, slug=None).items()[0][0]
     date_field = 'pub_date'
     template_name_field = 'template'
     month_format = '%m'
     queryset = Entry.objects.all()
-    
+
     def get_object(self):
         try:
             obj = super(EntryDateDetailView, self).get_object()
@@ -81,10 +87,10 @@ class EntryDateDetailView(DateDetailView):
 
         set_language_changer(self.request, obj.language_changer)
         return obj
-        
+
     def get_unfiltered_queryset(self):
         return super(EntryDateDetailView, self).get_queryset().published()
-            
+
     def get_queryset(self):
         queryset = super(EntryDateDetailView, self).get_queryset()
         queryset = filter_queryset_language(self.request, queryset)
@@ -92,14 +98,16 @@ class EntryDateDetailView(DateDetailView):
             return queryset
         else:
             return queryset.published()
-    
+
     def dispatch(self, request, *args, **kwargs):
         try:
             return super(EntryDateDetailView, self).dispatch(request, *args, **kwargs)
         except Redirect, e:
             return redirect(*e.args, **e.kwargs)
 
+
 class EntryArchiveIndexView(ArchiveIndexView):
+
     date_field = 'pub_date'
     allow_empty = True
     paginate_by = 15
